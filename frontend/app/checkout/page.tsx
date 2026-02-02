@@ -79,29 +79,55 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (!product) return
     
+    // Validate required fields
+    if (!shippingAddress.full_name || !shippingAddress.email || !shippingAddress.phone || 
+        !shippingAddress.address_line_1 || !shippingAddress.city || !shippingAddress.state || 
+        !shippingAddress.postal_code) {
+      alert('Please fill in all required shipping information.')
+      return
+    }
+    
     setProcessing(true)
     
     try {
-      // Simulate order processing
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Prepare order data for the real inventory API
+      const orderData = {
+        items: [{
+          product_id: Number(product.id),
+          quantity: quantity,
+          variant_details: {} // Add any customization options here
+        }],
+        shipping_address: shippingAddress,
+        billing_address: shippingAddress, // Use same as shipping for now
+        payment_method: paymentMethod,
+        coupon_code: undefined
+      }
       
-      // In real implementation, you would call the API to create the order
-      // const orderData = {
-      //   items: [{
-      //     product_id: product.id,
-      //     quantity: quantity
-      //   }],
-      //   shipping_address: shippingAddress,
-      //   payment_method: paymentMethod
-      // }
-      // const response = await api.createOrder(orderData, token)
+      // Call the real inventory API
+      const response = await api.createOrder(orderData)
       
-      // For now, redirect to a success page
-      router.push('/order-success')
+      if (response.success && response.data) {
+        // Order successfully created in inventory system
+        console.log('Order created successfully:', response.data)
+        
+        // Redirect to success page with order details
+        const orderParams = new URLSearchParams({
+          orderId: response.data.order_id.toString(),
+          orderNumber: response.data.order_number,
+          total: totals.total.toFixed(2)
+        })
+        
+        router.push(`/order-success?${orderParams.toString()}`)
+      } else {
+        throw new Error(response.message || 'Failed to create order')
+      }
       
     } catch (error) {
       console.error('Failed to place order:', error)
-      alert('Failed to place order. Please try again.')
+      
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Failed to place order. Please try again.'
+      alert(`Order failed: ${errorMessage}`)
     } finally {
       setProcessing(false)
     }

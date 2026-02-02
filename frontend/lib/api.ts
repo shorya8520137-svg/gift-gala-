@@ -618,16 +618,72 @@ export const api = {
     }
   },
 
-  // Order Management
-  async createOrder(orderData: CreateOrderData, token: string): Promise<ApiResponse<{ order_id: number; order_number: string }>> {
+  // Order Management - Real Inventory API Integration
+  async createOrder(orderData: CreateOrderData, token?: string): Promise<ApiResponse<{ order_id: number; order_number: string }>> {
     try {
+      // Transform data to match inventory API format
+      const inventoryOrderData = {
+        cartItems: orderData.items.map(item => ({
+          productId: item.product_id.toString(),
+          quantity: item.quantity,
+          customization: item.variant_details || {}
+        })),
+        customer: {
+          email: orderData.shipping_address.email,
+          firstName: orderData.shipping_address.full_name.split(' ')[0] || orderData.shipping_address.full_name,
+          lastName: orderData.shipping_address.full_name.split(' ').slice(1).join(' ') || ''
+        },
+        shippingAddress: {
+          name: orderData.shipping_address.full_name,
+          phone: orderData.shipping_address.phone,
+          email: orderData.shipping_address.email,
+          addressLine1: orderData.shipping_address.address_line_1,
+          addressLine2: orderData.shipping_address.address_line_2 || '',
+          city: orderData.shipping_address.city,
+          state: orderData.shipping_address.state,
+          postalCode: orderData.shipping_address.postal_code,
+          country: orderData.shipping_address.country
+        },
+        billingAddress: orderData.billing_address ? {
+          name: orderData.billing_address.full_name,
+          phone: orderData.billing_address.phone,
+          email: orderData.billing_address.email,
+          addressLine1: orderData.billing_address.address_line_1,
+          addressLine2: orderData.billing_address.address_line_2 || '',
+          city: orderData.billing_address.city,
+          state: orderData.billing_address.state,
+          postalCode: orderData.billing_address.postal_code,
+          country: orderData.billing_address.country
+        } : undefined,
+        payment: {
+          method: orderData.payment_method,
+          transactionId: `txn_${Date.now()}`, // Generate transaction ID
+          amount: 0, // Will be calculated by backend
+          currency: 'USD',
+          status: 'completed'
+        },
+        orderDetails: {
+          subtotal: 0, // Will be calculated by backend
+          tax: 0,
+          shipping: 0,
+          discount: 0,
+          total: 0
+        }
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      }
+
+      // Add authentication if token is provided
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch(`${API_BASE_URL}/orders`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(orderData)
+        headers,
+        body: JSON.stringify(inventoryOrderData)
       })
       
       const data = await response.json()

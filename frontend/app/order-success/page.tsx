@@ -1,13 +1,30 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { CheckCircle, Package, Truck, CreditCard } from 'lucide-react'
 import Link from 'next/link'
 
 export default function OrderSuccessPage() {
-  const [orderNumber] = useState(() => 
-    'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase()
-  )
+  const searchParams = useSearchParams()
+  const [orderDetails, setOrderDetails] = useState({
+    orderId: '',
+    orderNumber: '',
+    total: '0.00'
+  })
+
+  useEffect(() => {
+    // Get order details from URL parameters
+    const orderId = searchParams.get('orderId') || ''
+    const orderNumber = searchParams.get('orderNumber') || 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase()
+    const total = searchParams.get('total') || '0.00'
+    
+    setOrderDetails({
+      orderId,
+      orderNumber,
+      total
+    })
+  }, [searchParams])
 
   return (
     <div className="min-h-screen bg-gray-900 py-8">
@@ -20,7 +37,7 @@ export default function OrderSuccessPage() {
           </div>
           <h1 className="text-3xl font-bold text-white mb-4">Order Placed Successfully!</h1>
           <p className="text-gray-300 text-lg">
-            Thank you for your purchase. Your order has been confirmed and is being processed.
+            Thank you for your purchase. Your order has been confirmed and will appear in the inventory dashboard for processing.
           </p>
         </div>
 
@@ -29,9 +46,16 @@ export default function OrderSuccessPage() {
           <h2 className="text-xl font-semibold text-white mb-4">Order Details</h2>
           
           <div className="space-y-4">
+            {orderDetails.orderId && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Order ID:</span>
+                <span className="text-white font-semibold">#{orderDetails.orderId}</span>
+              </div>
+            )}
+            
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Order Number:</span>
-              <span className="text-white font-semibold">{orderNumber}</span>
+              <span className="text-white font-semibold">{orderDetails.orderNumber}</span>
             </div>
             
             <div className="flex justify-between items-center">
@@ -40,13 +64,18 @@ export default function OrderSuccessPage() {
             </div>
             
             <div className="flex justify-between items-center">
+              <span className="text-gray-400">Total Amount:</span>
+              <span className="text-white font-semibold">${orderDetails.total}</span>
+            </div>
+            
+            <div className="flex justify-between items-center">
               <span className="text-gray-400">Payment Status:</span>
-              <span className="text-green-400 font-semibold">Paid</span>
+              <span className="text-green-400 font-semibold">Completed</span>
             </div>
             
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Order Status:</span>
-              <span className="text-blue-400 font-semibold">Processing</span>
+              <span className="text-blue-400 font-semibold">Pending</span>
             </div>
           </div>
         </div>
@@ -57,7 +86,7 @@ export default function OrderSuccessPage() {
           
           <div className="space-y-4">
             <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <div className="flex-shrink-0 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
                 <CreditCard className="h-4 w-4 text-white" />
               </div>
               <div>
@@ -67,12 +96,22 @@ export default function OrderSuccessPage() {
             </div>
             
             <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <Package className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-medium">Order Received</h3>
+                <p className="text-gray-400 text-sm">Your order has been sent to the inventory system for processing.</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-8 h-8 bg-yellow-600 rounded-full flex items-center justify-center">
                 <Package className="h-4 w-4 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-medium">Order Processing</h3>
-                <p className="text-gray-400 text-sm">We're preparing your items for shipment.</p>
+                <h3 className="text-white font-medium">Processing</h3>
+                <p className="text-gray-400 text-sm">The admin will review and confirm your order in the inventory dashboard.</p>
               </div>
             </div>
             
@@ -88,10 +127,17 @@ export default function OrderSuccessPage() {
           </div>
         </div>
 
+        {/* Integration Success Notice */}
+        <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-8">
+          <p className="text-green-300 text-sm">
+            ✅ Your order has been successfully integrated with the inventory management system and will appear in the admin dashboard.
+          </p>
+        </div>
+
         {/* Email Confirmation */}
         <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 mb-8">
           <p className="text-blue-300 text-sm">
-            📧 A confirmation email has been sent to your email address with order details and tracking information.
+            📧 A confirmation email will be sent to your email address with order details and tracking information.
           </p>
         </div>
 
@@ -101,7 +147,7 @@ export default function OrderSuccessPage() {
             href="/account/orders"
             className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center"
           >
-            View Order Details
+            View My Orders
           </Link>
           
           <Link 
@@ -115,7 +161,7 @@ export default function OrderSuccessPage() {
         {/* Support */}
         <div className="text-center mt-8">
           <p className="text-gray-400 text-sm">
-            Need help? <Link href="/contact" className="text-blue-400 hover:text-blue-300">Contact our support team</Link>
+            Need help? Contact our support team for assistance with your order.
           </p>
         </div>
       </div>

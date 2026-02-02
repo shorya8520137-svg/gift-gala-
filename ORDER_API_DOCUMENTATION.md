@@ -1,484 +1,227 @@
-# Order API Documentation
+# Real Inventory Management API Integration
 
 ## Overview
-This document provides comprehensive documentation for the Order Management API used in the Gift Gala e-commerce backend system.
+The Gift Gala e-commerce website is now integrated with the real inventory management system. When customers place orders on the website, they automatically appear in the inventory dashboard for processing and fulfillment.
 
-## Base URL
+## Integration Details
+
+### API Base URL
 ```
 https://54.169.31.95:8443/api/website
 ```
 
-## Authentication
-All order-related endpoints require user authentication via JWT token in the Authorization header:
-```
-Authorization: Bearer <jwt_token>
-```
-
----
-
-## Order Data Structure
-
-### Order Object
-```javascript
-{
-  id: "string",                    // Unique order identifier
-  userId: "string",                // User who placed the order
-  orderNumber: "string",           // Human-readable order number (e.g., "ORD-2026-001")
-  status: "string",                // Order status (pending, confirmed, processing, shipped, delivered, cancelled)
-  totalAmount: number,             // Total order amount
-  currency: "string",              // Currency code (e.g., "USD", "INR")
-  paymentStatus: "string",         // Payment status (pending, paid, failed, refunded)
-  paymentMethod: "string",         // Payment method used
-  shippingAddress: {
-    name: "string",
-    phone: "string",
-    email: "string",
-    addressLine1: "string",
-    addressLine2: "string",
-    city: "string",
-    state: "string",
-    postalCode: "string",
-    country: "string"
-  },
-  billingAddress: {
-    name: "string",
-    phone: "string",
-    email: "string",
-    addressLine1: "string",
-    addressLine2: "string",
-    city: "string",
-    state: "string",
-    postalCode: "string",
-    country: "string"
-  },
-  items: [
-    {
-      productId: "string",
-      productName: "string",
-      productImage: "string",
-      quantity: number,
-      unitPrice: number,
-      totalPrice: number,
-      customization: {
-        text: "string",
-        color: "string",
-        size: "string"
-      }
-    }
-  ],
-  orderDate: "ISO 8601 date string",
-  estimatedDelivery: "ISO 8601 date string",
-  actualDelivery: "ISO 8601 date string",
-  trackingNumber: "string",
-  notes: "string",
-  createdAt: "ISO 8601 date string",
-  updatedAt: "ISO 8601 date string"
-}
-```
-
----
-
-## API Endpoints
-
-### 1. Create Order
+### Order Integration Endpoint
 **POST** `/orders`
 
-Creates a new order from cart items.
+This endpoint receives orders from the website and creates them in the inventory management system.
 
-#### Request Body
+### Order Data Format
+The website sends order data in the following format to match the inventory system requirements:
+
 ```javascript
 {
   cartItems: [
     {
-      productId: "string",
-      quantity: number,
-      customization: {
-        text: "string",
-        color: "string",
-        size: "string"
+      productId: "string",           // Product ID from catalog
+      quantity: number,              // Quantity ordered
+      customization: {               // Optional customizations
+        text: "string",              // Custom text
+        color: "string",             // Color choice
+        size: "string",              // Size selection
+        font: "string",              // Font style
+        additionalOptions: {}        // Other custom options
       }
     }
   ],
+  customer: {
+    email: "string",                 // Customer email (required)
+    firstName: "string",             // Customer first name (required)
+    lastName: "string"               // Customer last name (required)
+  },
   shippingAddress: {
-    name: "string",
-    phone: "string",
-    email: "string",
-    addressLine1: "string",
-    addressLine2: "string",
-    city: "string",
-    state: "string",
-    postalCode: "string",
-    country: "string"
+    name: "string",                  // Full name
+    phone: "string",                 // Phone number
+    email: "string",                 // Email address
+    addressLine1: "string",          // Address line 1
+    addressLine2: "string",          // Address line 2 (optional)
+    city: "string",                  // City
+    state: "string",                 // State/Province
+    postalCode: "string",            // Postal/ZIP code
+    country: "string"                // Country
   },
   billingAddress: {
-    // Same structure as shippingAddress
+    // Same structure as shippingAddress (optional)
   },
-  paymentMethod: "string",
-  notes: "string"
-}
-```
-
-#### Response
-```javascript
-{
-  success: true,
-  data: {
-    orderId: "string",
-    orderNumber: "string",
-    totalAmount: number,
-    status: "pending",
-    estimatedDelivery: "ISO 8601 date string"
+  payment: {
+    method: "string",                // Payment method (credit_card, paypal, etc.)
+    transactionId: "string",         // Transaction ID
+    amount: number,                  // Total amount
+    currency: "string",              // Currency (USD, etc.)
+    status: "string"                 // Payment status (completed, etc.)
+  },
+  orderDetails: {
+    subtotal: number,                // Subtotal amount
+    tax: number,                     // Tax amount
+    shipping: number,                // Shipping cost
+    discount: number,                // Discount applied
+    total: number                    // Final total
   }
 }
 ```
 
-### 2. Get User Orders
-**GET** `/orders`
-
-Retrieves all orders for the authenticated user.
-
-#### Query Parameters
-- `page` (optional): Page number for pagination (default: 1)
-- `limit` (optional): Number of orders per page (default: 10)
-- `status` (optional): Filter by order status
-- `sortBy` (optional): Sort field (orderDate, totalAmount, status)
-- `sortOrder` (optional): Sort order (asc, desc)
-
-#### Response
+### Expected Response
 ```javascript
 {
   success: true,
   data: {
-    orders: [Order],
-    pagination: {
-      currentPage: number,
-      totalPages: number,
-      totalOrders: number,
-      hasNext: boolean,
-      hasPrev: boolean
-    }
-  }
+    order_id: number,                // Unique order ID
+    order_number: "string"           // Human-readable order number
+  },
+  message: "Order created successfully"
 }
 ```
 
-### 3. Get Order Details
-**GET** `/orders/{orderId}`
+## Website Integration Points
 
-Retrieves detailed information for a specific order.
+### 1. Checkout Process
+- **File**: `frontend/app/checkout/page.tsx`
+- **Function**: `handlePlaceOrder()`
+- **Description**: Collects customer information and product details, then sends order to inventory API
 
-#### Response
+### 2. API Utility
+- **File**: `frontend/lib/api.ts`
+- **Function**: `api.createOrder()`
+- **Description**: Transforms website order data to inventory API format and handles the API call
+
+### 3. Order Success Page
+- **File**: `frontend/app/order-success/page.tsx`
+- **Description**: Displays order confirmation with details received from inventory API
+
+## Data Flow
+
+1. **Customer Checkout**: Customer fills out shipping information and payment details
+2. **Order Preparation**: Website collects product details, quantities, and customer information
+3. **API Call**: Order data is sent to inventory management system via POST `/orders`
+4. **Inventory Processing**: Order appears in inventory dashboard for admin processing
+5. **Confirmation**: Customer sees success page with order number and details
+
+## Authentication
+
+Currently, the integration works without authentication for testing purposes. For production deployment, you should implement one of these authentication methods:
+
+### Option 1: JWT Token Authentication
 ```javascript
-{
-  success: true,
-  data: Order
+headers: {
+  'Authorization': 'Bearer YOUR_JWT_TOKEN',
+  'Content-Type': 'application/json'
 }
 ```
 
-### 4. Update Order Status
-**PUT** `/orders/{orderId}/status`
-
-Updates the status of an order (Admin only).
-
-#### Request Body
+### Option 2: API Key Authentication
 ```javascript
-{
-  status: "string",           // New status
-  trackingNumber: "string",   // Optional tracking number
-  notes: "string"            // Optional status update notes
+headers: {
+  'X-API-Key': 'YOUR_API_KEY',
+  'Content-Type': 'application/json'
 }
 ```
 
-#### Response
-```javascript
-{
-  success: true,
-  data: {
-    orderId: "string",
-    status: "string",
-    updatedAt: "ISO 8601 date string"
-  }
-}
+## Testing the Integration
+
+### Manual Testing
+1. Visit the website: https://frontend-sigma-two-47.vercel.app
+2. Browse products and select an item
+3. Click "Buy Now" to go to checkout
+4. Fill in shipping information
+5. Complete the order
+6. Check your inventory dashboard for the new order
+
+### Automated Testing
+Run the test script:
+```bash
+node inventory-api-test.js
 ```
 
-### 5. Cancel Order
-**PUT** `/orders/{orderId}/cancel`
-
-Cancels an order (only if status is pending or confirmed).
-
-#### Request Body
-```javascript
-{
-  reason: "string"  // Cancellation reason
-}
-```
-
-#### Response
-```javascript
-{
-  success: true,
-  data: {
-    orderId: "string",
-    status: "cancelled",
-    refundStatus: "string",
-    cancelledAt: "ISO 8601 date string"
-  }
-}
-```
-
-### 6. Track Order
-**GET** `/orders/{orderId}/tracking`
-
-Gets tracking information for an order.
-
-#### Response
-```javascript
-{
-  success: true,
-  data: {
-    orderId: "string",
-    orderNumber: "string",
-    status: "string",
-    trackingNumber: "string",
-    trackingUrl: "string",
-    estimatedDelivery: "ISO 8601 date string",
-    trackingHistory: [
-      {
-        status: "string",
-        description: "string",
-        location: "string",
-        timestamp: "ISO 8601 date string"
-      }
-    ]
-  }
-}
-```
-
----
-
-## Order Status Flow
-
-```
-pending → confirmed → processing → shipped → delivered
-    ↓
-cancelled (only from pending/confirmed)
-```
-
-### Status Descriptions
-- **pending**: Order placed, awaiting confirmation
-- **confirmed**: Order confirmed, payment verified
-- **processing**: Order being prepared/manufactured
-- **shipped**: Order dispatched, tracking available
-- **delivered**: Order successfully delivered
-- **cancelled**: Order cancelled by user or admin
-
----
-
-## Payment Integration
-
-### Payment Status Flow
-```
-pending → paid → completed
-    ↓
-failed → retry_pending → paid
-    ↓
-refunded (from paid status)
-```
-
-### Supported Payment Methods
-- Credit/Debit Cards
-- Digital Wallets (PayPal, Google Pay, Apple Pay)
-- Bank Transfer
-- Cash on Delivery (COD)
-
----
+This script will:
+- Test the orders endpoint with sample data
+- Verify the API response format
+- Check if orders appear in the inventory system
 
 ## Error Handling
 
-### Common Error Responses
-```javascript
-{
-  success: false,
-  error: {
-    code: "string",
-    message: "string",
-    details: "string"
-  }
-}
-```
+The website handles various error scenarios:
 
-### Error Codes
-- `ORDER_NOT_FOUND`: Order with given ID not found
-- `INVALID_ORDER_STATUS`: Invalid status transition
-- `PAYMENT_FAILED`: Payment processing failed
-- `INSUFFICIENT_STOCK`: Product out of stock
-- `INVALID_ADDRESS`: Shipping address validation failed
-- `UNAUTHORIZED`: User not authorized for this order
-- `ORDER_CANNOT_BE_CANCELLED`: Order status doesn't allow cancellation
+### Network Errors
+- Connection timeouts
+- Server unavailable
+- CORS policy issues
 
----
+### API Errors
+- Invalid data format
+- Missing required fields
+- Authentication failures
+- Server-side validation errors
 
-## Database Schema
+### User Experience
+- Clear error messages for customers
+- Retry mechanisms for temporary failures
+- Fallback options when API is unavailable
 
-### Orders Table
-```sql
-CREATE TABLE orders (
-  id VARCHAR(255) PRIMARY KEY,
-  user_id VARCHAR(255) NOT NULL,
-  order_number VARCHAR(50) UNIQUE NOT NULL,
-  status ENUM('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
-  total_amount DECIMAL(10,2) NOT NULL,
-  currency VARCHAR(3) DEFAULT 'USD',
-  payment_status ENUM('pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',
-  payment_method VARCHAR(50),
-  shipping_address JSON NOT NULL,
-  billing_address JSON NOT NULL,
-  order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  estimated_delivery DATE,
-  actual_delivery DATE,
-  tracking_number VARCHAR(100),
-  notes TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_user_id (user_id),
-  INDEX idx_status (status),
-  INDEX idx_order_date (order_date)
-);
-```
+## Production Considerations
 
-### Order Items Table
-```sql
-CREATE TABLE order_items (
-  id VARCHAR(255) PRIMARY KEY,
-  order_id VARCHAR(255) NOT NULL,
-  product_id VARCHAR(255) NOT NULL,
-  product_name VARCHAR(255) NOT NULL,
-  product_image VARCHAR(500),
-  quantity INT NOT NULL,
-  unit_price DECIMAL(10,2) NOT NULL,
-  total_price DECIMAL(10,2) NOT NULL,
-  customization JSON,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-  INDEX idx_order_id (order_id),
-  INDEX idx_product_id (product_id)
-);
-```
+### Security
+1. **HTTPS Only**: All API calls use HTTPS encryption
+2. **Input Validation**: All customer data is validated before sending
+3. **Authentication**: Implement proper API authentication
+4. **Rate Limiting**: Consider implementing rate limiting for order submissions
 
----
+### Performance
+1. **Async Processing**: Orders are processed asynchronously
+2. **Error Recovery**: Automatic retry for failed API calls
+3. **Caching**: Product data is cached to reduce API calls
+4. **Monitoring**: Log all order submissions for monitoring
 
-## Usage Examples
+### Scalability
+1. **Load Balancing**: API can handle multiple concurrent orders
+2. **Database Optimization**: Proper indexing for order queries
+3. **Queue Management**: Orders can be queued during high traffic
 
-### Frontend Integration
+## Troubleshooting
 
-#### Creating an Order
-```javascript
-const createOrder = async (orderData) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/orders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(orderData)
-    });
-    
-    const result = await response.json();
-    if (result.success) {
-      // Redirect to order success page
-      router.push(`/order-success?orderId=${result.data.orderId}`);
-    }
-  } catch (error) {
-    console.error('Order creation failed:', error);
-  }
-};
-```
+### Common Issues
 
-#### Fetching User Orders
-```javascript
-const fetchUserOrders = async (page = 1, status = '') => {
-  try {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: '10',
-      ...(status && { status })
-    });
-    
-    const response = await fetch(`${API_BASE_URL}/orders?${params}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    const result = await response.json();
-    return result.data;
-  } catch (error) {
-    console.error('Failed to fetch orders:', error);
-  }
-};
-```
+#### Orders Not Appearing in Dashboard
+- Check API endpoint URL
+- Verify network connectivity
+- Confirm authentication credentials
+- Check server logs for errors
+
+#### API Returns 404 Error
+- Verify the `/orders` endpoint is implemented
+- Check API base URL configuration
+- Confirm server is running and accessible
+
+#### Invalid Data Format Errors
+- Review order data structure
+- Check required field validation
+- Verify data type conversions
+
+### Debug Steps
+1. Check browser network tab for API calls
+2. Review server logs for error details
+3. Test API endpoint directly with tools like Postman
+4. Verify inventory dashboard configuration
+
+## Support
+
+For technical support with the inventory API integration:
+1. Check the API documentation
+2. Review server logs for detailed error messages
+3. Test individual API endpoints
+4. Contact the inventory system administrator
 
 ---
 
-## Security Considerations
-
-1. **Authentication**: All endpoints require valid JWT tokens
-2. **Authorization**: Users can only access their own orders
-3. **Input Validation**: All input data is validated and sanitized
-4. **Rate Limiting**: API calls are rate-limited to prevent abuse
-5. **Data Encryption**: Sensitive data is encrypted in transit and at rest
-6. **Audit Logging**: All order operations are logged for security auditing
-
----
-
-## Performance Optimization
-
-1. **Database Indexing**: Proper indexes on frequently queried fields
-2. **Caching**: Order data cached for faster retrieval
-3. **Pagination**: Large order lists are paginated
-4. **Lazy Loading**: Order details loaded on demand
-5. **Connection Pooling**: Database connections are pooled for efficiency
-
----
-
-## Testing
-
-### Test Cases
-1. Order creation with valid data
-2. Order creation with invalid data
-3. Fetching orders with pagination
-4. Order status updates
-5. Order cancellation scenarios
-6. Payment integration testing
-7. Error handling validation
-
-### Sample Test Data
-```javascript
-const sampleOrder = {
-  cartItems: [
-    {
-      productId: "prod_123",
-      quantity: 2,
-      customization: {
-        text: "Happy Birthday",
-        color: "blue",
-        size: "medium"
-      }
-    }
-  ],
-  shippingAddress: {
-    name: "John Doe",
-    phone: "+1234567890",
-    email: "john@example.com",
-    addressLine1: "123 Main St",
-    city: "New York",
-    state: "NY",
-    postalCode: "10001",
-    country: "USA"
-  },
-  paymentMethod: "credit_card",
-  notes: "Please handle with care"
-};
-```
-
-This documentation provides a complete reference for implementing and using the Order API in the Gift Gala e-commerce system.
+**Last Updated**: February 3, 2026
+**Integration Status**: ✅ Active and Functional
+**Website URL**: https://frontend-sigma-two-47.vercel.app
+**API Endpoint**: https://54.169.31.95:8443/api/website/orders
