@@ -101,3 +101,17 @@ jspm_packages/
 # Large image files (keep only essential ones)
 frontend/public/images/products/
 !frontend/public/images/products/.gitkeep
+
+# Exclude all large images
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.JPG
+*.PNG
+*.JPEG
+*.WEBP
+
+# Keep only essential small icons
+!frontend/public/images/icons/*.svg
+!frontend/public/images/icons/*.png
