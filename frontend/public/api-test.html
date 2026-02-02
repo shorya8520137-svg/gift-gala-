@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Gala API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .success {
+            background-color: #1a4d1a;
+            border-color: #4CAF50;
+        }
+        .error {
+            background-color: #4d1a1a;
+            border-color: #f44336;
+        }
+        .warning {
+            background-color: #4d4d1a;
+            border-color: #ff9800;
+        }
+        .info {
+            background-color: #1a1a4d;
+            border-color: #2196F3;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        pre {
+            background-color: #2a2a2a;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Gift Gala API Test Dashboard</h1>
+    <p>This page tests the API endpoints used by your e-commerce website.</p>
+    
+    <div>
+        <button onclick="testAllEndpoints()">🚀 Test All Endpoints</button>
+        <button onclick="testProducts()">📦 Test Products</button>
+        <button onclick="testCategories()">📂 Test Categories</button>
+        <button onclick="testOrders()">📋 Test Orders</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const API_BASE_URL = 'https://54.169.31.95:8443/api/website';
+        const resultsDiv = document.getElementById('results');
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+
+        async function testEndpoint(endpoint, name, requiresAuth = false) {
+            addResult(`🔍 Testing ${name} (${endpoint})...`, 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const contentType = response.headers.get('content-type');
+                
+                if (response.ok) {
+                    try {
+                        const data = await response.json();
+                        addResult(`✅ ${name}: SUCCESS (${response.status})<br>
+                                  📊 Data: ${JSON.stringify(data, null, 2).substring(0, 200)}...`, 'success');
+                    } catch (e) {
+                        addResult(`⚠️ ${name}: Response not JSON (${response.status})<br>
+                                  Content-Type: ${contentType}`, 'warning');
+                    }
+                } else if (response.status === 404) {
+                    addResult(`❌ ${name}: NOT FOUND (404)<br>
+                              🔧 This endpoint is not implemented on the server`, 'error');
+                } else if (response.status === 401) {
+                    addResult(`🔐 ${name}: AUTHENTICATION REQUIRED (401)<br>
+                              ℹ️ This is expected for protected endpoints`, 'warning');
+                } else {
+                    const text = await response.text();
+                    addResult(`⚠️ ${name}: Unexpected status (${response.status})<br>
+                              Response: ${text.substring(0, 100)}...`, 'warning');
+                }
+            } catch (error) {
+                if (error.message.includes('Failed to fetch')) {
+                    addResult(`❌ ${name}: CONNECTION FAILED<br>
+                              🔍 Server might be down or CORS issue<br>
+                              Error: ${error.message}`, 'error');
+                } else {
+                    addResult(`❌ ${name}: ERROR<br>
+                              ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testProducts() {
+            await testEndpoint('/products', 'Products API');
+        }
+
+        async function testCategories() {
+            await testEndpoint('/categories', 'Categories API');
+        }
+
+        async function testOrders() {
+            await testEndpoint('/orders', 'Orders API', true);
+        }
+
+        async function testCart() {
+            await testEndpoint('/cart', 'Cart API', true);
+        }
+
+        async function testFeaturedProducts() {
+            await testEndpoint('/products/featured', 'Featured Products API');
+        }
+
+        async function testAllEndpoints() {
+            clearResults();
+            addResult('🚀 Starting comprehensive API test...', 'info');
+            
+            // Test server connectivity first
+            addResult('1️⃣ Testing server connectivity...', 'info');
+            try {
+                const response = await fetch(API_BASE_URL);
+                addResult(`✅ Server is responding (${response.status})`, 'success');
+            } catch (error) {
+                addResult(`❌ Server connection failed: ${error.message}`, 'error');
+            }
+
+            // Test individual endpoints
+            addResult('2️⃣ Testing individual endpoints...', 'info');
+            await testProducts();
+            await testCategories();
+            await testFeaturedProducts();
+            await testOrders();
+            await testCart();
+
+            // Summary
+            addResult(`
+                <h3>📋 Test Summary</h3>
+                <p><strong>Expected Results:</strong></p>
+                <ul>
+                    <li>✅ Products API should work (200 OK)</li>
+                    <li>✅ Categories API should work (200 OK)</li>
+                    <li>❌ Orders API likely returns 404 (not implemented)</li>
+                    <li>❌ Cart API likely returns 404 (not implemented)</li>
+                    <li>❌ Featured Products likely returns 404 (not implemented)</li>
+                </ul>
+                <p><strong>If all tests fail:</strong></p>
+                <ul>
+                    <li>🔍 Check if the backend server is running</li>
+                    <li>🔍 Verify the server IP address: 54.169.31.95:8443</li>
+                    <li>🔍 Check CORS configuration on the server</li>
+                </ul>
+            `, 'info');
+        }
+
+        // Auto-run test when page loads
+        window.onload = function() {
+            addResult('🎯 Gift Gala API Test Dashboard Loaded', 'info');
+            addResult('Click "Test All Endpoints" to start testing your API', 'info');
+        };
+    </script>
+</body>
+</html>
