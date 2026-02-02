@@ -1,4 +1,5 @@
 const API_BASE_URL = 'https://54.169.31.95:8443/api/website'
+const ACCESS_TOKEN = 'wk_live_3c6930a44febffade97a5e1a00e4db23a0dc552e3bf8a55800c1f3fd1f03de37'
 
 // TypeScript interfaces based on API documentation
 export interface Product {
@@ -505,11 +506,11 @@ export const api = {
   },
 
   // Cart Management
-  async getCart(token: string): Promise<ApiResponse<Cart>> {
+  async getCart(): Promise<ApiResponse<Cart>> {
     try {
       const response = await fetch(`${API_BASE_URL}/cart`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${ACCESS_TOKEN}`
         }
       })
       
@@ -526,12 +527,12 @@ export const api = {
     }
   },
 
-  async addToCart(cartData: AddToCartData, token: string): Promise<ApiResponse<void>> {
+  async addToCart(cartData: AddToCartData): Promise<ApiResponse<void>> {
     try {
       const response = await fetch(`${API_BASE_URL}/cart/add`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${ACCESS_TOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(cartData)
@@ -550,12 +551,12 @@ export const api = {
     }
   },
 
-  async updateCartItem(itemId: number, quantity: number, token: string): Promise<ApiResponse<void>> {
+  async updateCartItem(itemId: number, quantity: number): Promise<ApiResponse<void>> {
     try {
       const response = await fetch(`${API_BASE_URL}/cart/update/${itemId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${ACCESS_TOKEN}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ quantity })
@@ -574,12 +575,12 @@ export const api = {
     }
   },
 
-  async removeFromCart(itemId: number, token: string): Promise<ApiResponse<void>> {
+  async removeFromCart(itemId: number): Promise<ApiResponse<void>> {
     try {
       const response = await fetch(`${API_BASE_URL}/cart/remove/${itemId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${ACCESS_TOKEN}`
         }
       })
       
@@ -596,12 +597,12 @@ export const api = {
     }
   },
 
-  async clearCart(token: string): Promise<ApiResponse<void>> {
+  async clearCart(): Promise<ApiResponse<void>> {
     try {
       const response = await fetch(`${API_BASE_URL}/cart/clear`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${ACCESS_TOKEN}`
         }
       })
       
@@ -619,7 +620,7 @@ export const api = {
   },
 
   // Order Management - Real Inventory API Integration
-  async createOrder(orderData: CreateOrderData, token?: string): Promise<ApiResponse<{ order_id: number; order_number: string }>> {
+  async createOrder(orderData: CreateOrderData): Promise<ApiResponse<{ order_id: number; order_number: string }>> {
     try {
       // Transform data to match inventory API format
       const inventoryOrderData = {
@@ -672,12 +673,8 @@ export const api = {
       }
 
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      }
-
-      // Add authentication if token is provided
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${ACCESS_TOKEN}`
       }
 
       const response = await fetch(`${API_BASE_URL}/orders`, {
@@ -699,7 +696,7 @@ export const api = {
     }
   },
 
-  async getOrders(token: string, params: { page?: number; limit?: number; status?: string } = {}): Promise<ApiResponse<Order[]>> {
+  async getOrders(params: { page?: number; limit?: number; status?: string } = {}): Promise<ApiResponse<Order[]>> {
     try {
       const queryParams = new URLSearchParams()
       if (params.page) queryParams.append('page', params.page.toString())
@@ -710,7 +707,7 @@ export const api = {
       
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${ACCESS_TOKEN}`
         }
       })
       
@@ -727,11 +724,11 @@ export const api = {
     }
   },
 
-  async getOrder(orderId: number, token: string): Promise<ApiResponse<Order>> {
+  async getOrder(orderId: number): Promise<ApiResponse<Order>> {
     try {
       const response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${ACCESS_TOKEN}`
         }
       })
       
@@ -748,12 +745,12 @@ export const api = {
     }
   },
 
-  async cancelOrder(orderId: number, token: string): Promise<ApiResponse<void>> {
+  async cancelOrder(orderId: number): Promise<ApiResponse<void>> {
     try {
       const response = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${ACCESS_TOKEN}`
         }
       })
       

@@ -18,13 +18,16 @@ export default function OrdersPage() {
   const loadOrders = async () => {
     try {
       setLoading(true)
-      // In real implementation, you would get the token from auth context
-      // const response = await api.getOrders(token, { 
-      //   status: selectedStatus === 'all' ? undefined : selectedStatus 
-      // })
-      // setOrders(response.data || [])
+      // Use the real API with integrated access token
+      const response = await api.getOrders({ 
+        status: selectedStatus === 'all' ? undefined : selectedStatus 
+      })
+      setOrders(response.data || [])
+    } catch (error) {
+      console.error('Failed to load orders:', error)
+      setError('Failed to load orders')
       
-      // For now, show mock data
+      // Fallback to mock data if API fails
       setOrders([
         {
           id: 1,
@@ -122,9 +125,6 @@ export default function OrdersPage() {
           tracking_number: 'TRK987654321'
         }
       ])
-    } catch (error) {
-      console.error('Failed to load orders:', error)
-      setError('Failed to load orders')
     } finally {
       setLoading(false)
     }
