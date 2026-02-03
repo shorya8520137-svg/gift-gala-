@@ -2,7 +2,7 @@ const API_BASE_URL = 'https://54.169.31.95:8443/api/website'
 const ACCESS_TOKEN = 'wk_live_3c6930a44febffade97a5e1a00e4db23a0dc552e3bf8a55800c1f3fd1f03de37'
 
 // Helper function to get authentication headers with multiple fallback options
-const getAuthHeaders = (method = 'bearer') => {
+const getAuthHeaders = (method = 'apikey') => {
   const baseHeaders = {
     'Content-Type': 'application/json'
   }
@@ -18,6 +18,11 @@ const getAuthHeaders = (method = 'bearer') => {
         ...baseHeaders,
         'X-API-Key': ACCESS_TOKEN
       }
+    case 'apikey-lower':
+      return {
+        ...baseHeaders,
+        'x-api-key': ACCESS_TOKEN
+      }
     case 'token':
       return {
         ...baseHeaders,
@@ -32,6 +37,16 @@ const getAuthHeaders = (method = 'bearer') => {
       return {
         ...baseHeaders,
         'Access-Token': ACCESS_TOKEN
+      }
+    case 'authorization-only':
+      return {
+        ...baseHeaders,
+        'Authorization': ACCESS_TOKEN
+      }
+    case 'api-key':
+      return {
+        ...baseHeaders,
+        'API-Key': ACCESS_TOKEN
       }
     default:
       return baseHeaders
@@ -271,21 +286,40 @@ export const api = {
 
     const url = `${API_BASE_URL}/products${queryParams.toString() ? '?' + queryParams.toString() : ''}`
     
-    try {
-      const response = await fetch(url, {
-        headers: getAuthHeaders('apikey') // Use X-API-Key header
-      })
-      const data: ApiResponse<Product[]> = await response.json()
+    console.log('🔍 Fetching products from:', url)
+    console.log('🔍 Using token:', ACCESS_TOKEN.substring(0, 20) + '...')
+    
+    // Try different authentication methods
+    const authMethods = ['apikey', 'apikey-lower', 'bearer', 'authorization-only', 'api-key', 'token', 'access-token']
+    
+    for (const method of authMethods) {
+      const headers = getAuthHeaders(method)
+      console.log(`🔍 Trying ${method}:`, headers)
       
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to fetch products')
+      try {
+        const response = await fetch(url, { headers })
+        console.log(`🔍 ${method} Response:`, response.status, response.statusText)
+        
+        if (response.ok) {
+          const data: ApiResponse<Product[]> = await response.json()
+          console.log(`🔍 ✅ ${method} SUCCESS!`, data.success ? 'Valid response' : 'Invalid response')
+          
+          if (!data.success) {
+            throw new Error(data.message || 'Failed to fetch products')
+          }
+          
+          return data
+        } else {
+          const errorText = await response.text()
+          console.log(`🔍 ❌ ${method} Error:`, errorText)
+        }
+      } catch (error) {
+        console.log(`🔍 ❌ ${method} Exception:`, error.message)
       }
-      
-      return data
-    } catch (error) {
-      console.error('API Error:', error)
-      throw error
     }
+    
+    // If all methods failed, throw error
+    throw new Error('All authentication methods failed for products API')
   },
 
   // Get single product by ID
@@ -328,21 +362,40 @@ export const api = {
 
   // Get all categories
   async getCategories(): Promise<ApiResponse<Category[]>> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/categories`, {
-        headers: getAuthHeaders('apikey') // Use X-API-Key header
-      })
-      const data: ApiResponse<Category[]> = await response.json()
+    console.log('🔍 Fetching categories from:', `${API_BASE_URL}/categories`)
+    console.log('🔍 Using token:', ACCESS_TOKEN.substring(0, 20) + '...')
+    
+    // Try different authentication methods
+    const authMethods = ['apikey', 'apikey-lower', 'bearer', 'authorization-only', 'api-key', 'token', 'access-token']
+    
+    for (const method of authMethods) {
+      const headers = getAuthHeaders(method)
+      console.log(`🔍 Trying ${method}:`, headers)
       
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to fetch categories')
+      try {
+        const response = await fetch(`${API_BASE_URL}/categories`, { headers })
+        console.log(`🔍 ${method} Response:`, response.status, response.statusText)
+        
+        if (response.ok) {
+          const data: ApiResponse<Category[]> = await response.json()
+          console.log(`🔍 ✅ ${method} SUCCESS!`, data.success ? 'Valid response' : 'Invalid response')
+          
+          if (!data.success) {
+            throw new Error(data.message || 'Failed to fetch categories')
+          }
+          
+          return data
+        } else {
+          const errorText = await response.text()
+          console.log(`🔍 ❌ ${method} Error:`, errorText)
+        }
+      } catch (error) {
+        console.log(`🔍 ❌ ${method} Exception:`, error.message)
       }
-      
-      return data
-    } catch (error) {
-      console.error('API Error:', error)
-      throw error
     }
+    
+    // If all methods failed, throw error
+    throw new Error('All authentication methods failed for categories API')
   },
 
   // Create a new product (requires authentication)
