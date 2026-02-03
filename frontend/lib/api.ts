@@ -272,7 +272,9 @@ export const api = {
     const url = `${API_BASE_URL}/products${queryParams.toString() ? '?' + queryParams.toString() : ''}`
     
     try {
-      const response = await fetch(url)
+      const response = await fetch(url, {
+        headers: getAuthHeaders('apikey') // Use X-API-Key header
+      })
       const data: ApiResponse<Product[]> = await response.json()
       
       if (!data.success) {
@@ -289,7 +291,9 @@ export const api = {
   // Get single product by ID
   async getProduct(id: string | number): Promise<ApiResponse<Product>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/products/${id}`)
+      const response = await fetch(`${API_BASE_URL}/products/${id}`, {
+        headers: getAuthHeaders('apikey') // Use X-API-Key header
+      })
       const data: ApiResponse<Product> = await response.json()
       
       if (!data.success) {
@@ -306,7 +310,9 @@ export const api = {
   // Get featured products
   async getFeaturedProducts(limit: number = 8): Promise<ApiResponse<Product[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/products/featured?limit=${limit}`)
+      const response = await fetch(`${API_BASE_URL}/products/featured?limit=${limit}`, {
+        headers: getAuthHeaders('apikey') // Use X-API-Key header
+      })
       const data: ApiResponse<Product[]> = await response.json()
       
       if (!data.success) {
@@ -323,7 +329,9 @@ export const api = {
   // Get all categories
   async getCategories(): Promise<ApiResponse<Category[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/categories`)
+      const response = await fetch(`${API_BASE_URL}/categories`, {
+        headers: getAuthHeaders('apikey') // Use X-API-Key header
+      })
       const data: ApiResponse<Category[]> = await response.json()
       
       if (!data.success) {
@@ -545,17 +553,9 @@ export const api = {
   // Cart Management
   async getCart(): Promise<ApiResponse<Cart>> {
     try {
-      // Try with Authorization Bearer header first
-      let response = await fetch(`${API_BASE_URL}/cart`, {
-        headers: getAuthHeaders('bearer')
+      const response = await fetch(`${API_BASE_URL}/cart`, {
+        headers: getAuthHeaders('apikey') // Use X-API-Key as primary
       })
-      
-      // If Authorization Bearer fails, try with X-API-Key header
-      if (!response.ok && response.status === 401) {
-        response = await fetch(`${API_BASE_URL}/cart`, {
-          headers: getAuthHeaders('apikey')
-        })
-      }
       
       const data = await response.json()
       
@@ -572,21 +572,11 @@ export const api = {
 
   async addToCart(cartData: AddToCartData): Promise<ApiResponse<void>> {
     try {
-      // Try with Authorization Bearer header first
-      let response = await fetch(`${API_BASE_URL}/cart/add`, {
+      const response = await fetch(`${API_BASE_URL}/cart/add`, {
         method: 'POST',
-        headers: getAuthHeaders('bearer'),
+        headers: getAuthHeaders('apikey'), // Use X-API-Key as primary
         body: JSON.stringify(cartData)
       })
-      
-      // If Authorization Bearer fails, try with X-API-Key header
-      if (!response.ok && response.status === 401) {
-        response = await fetch(`${API_BASE_URL}/cart/add`, {
-          method: 'POST',
-          headers: getAuthHeaders('apikey'),
-          body: JSON.stringify(cartData)
-        })
-      }
       
       const data = await response.json()
       
@@ -603,21 +593,11 @@ export const api = {
 
   async updateCartItem(itemId: number, quantity: number): Promise<ApiResponse<void>> {
     try {
-      // Try with Authorization Bearer header first
-      let response = await fetch(`${API_BASE_URL}/cart/update/${itemId}`, {
+      const response = await fetch(`${API_BASE_URL}/cart/update/${itemId}`, {
         method: 'PUT',
-        headers: getAuthHeaders('bearer'),
+        headers: getAuthHeaders('apikey'), // Use X-API-Key as primary
         body: JSON.stringify({ quantity })
       })
-      
-      // If Authorization Bearer fails, try with X-API-Key header
-      if (!response.ok && response.status === 401) {
-        response = await fetch(`${API_BASE_URL}/cart/update/${itemId}`, {
-          method: 'PUT',
-          headers: getAuthHeaders('apikey'),
-          body: JSON.stringify({ quantity })
-        })
-      }
       
       const data = await response.json()
       
@@ -634,19 +614,10 @@ export const api = {
 
   async removeFromCart(itemId: number): Promise<ApiResponse<void>> {
     try {
-      // Try with Authorization Bearer header first
-      let response = await fetch(`${API_BASE_URL}/cart/remove/${itemId}`, {
+      const response = await fetch(`${API_BASE_URL}/cart/remove/${itemId}`, {
         method: 'DELETE',
-        headers: getAuthHeaders('bearer')
+        headers: getAuthHeaders('apikey') // Use X-API-Key as primary
       })
-      
-      // If Authorization Bearer fails, try with X-API-Key header
-      if (!response.ok && response.status === 401) {
-        response = await fetch(`${API_BASE_URL}/cart/remove/${itemId}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders('apikey')
-        })
-      }
       
       const data = await response.json()
       
@@ -663,19 +634,10 @@ export const api = {
 
   async clearCart(): Promise<ApiResponse<void>> {
     try {
-      // Try with Authorization Bearer header first
-      let response = await fetch(`${API_BASE_URL}/cart/clear`, {
+      const response = await fetch(`${API_BASE_URL}/cart/clear`, {
         method: 'DELETE',
-        headers: getAuthHeaders('bearer')
+        headers: getAuthHeaders('apikey') // Use X-API-Key as primary
       })
-      
-      // If Authorization Bearer fails, try with X-API-Key header
-      if (!response.ok && response.status === 401) {
-        response = await fetch(`${API_BASE_URL}/cart/clear`, {
-          method: 'DELETE',
-          headers: getAuthHeaders('apikey')
-        })
-      }
       
       const data = await response.json()
       
@@ -747,53 +709,36 @@ export const api = {
       console.log('🔍 Creating order with token:', ACCESS_TOKEN.substring(0, 20) + '...')
       console.log('🔍 Order data:', inventoryOrderData)
 
-      // Try different authentication methods
-      const authMethods = ['bearer', 'apikey', 'access-token', 'auth-token', 'token']
+      // Use X-API-Key header as primary method (server confirmed this is required)
+      const headers = getAuthHeaders('apikey')
+      console.log('🔍 Using X-API-Key headers:', headers)
       
-      for (const method of authMethods) {
-        const headers = getAuthHeaders(method)
-        console.log(`🔍 Trying ${method} authentication:`, headers)
-        
-        try {
-          const response = await fetch(`${API_BASE_URL}/orders`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(inventoryOrderData)
-          })
-          
-          console.log(`🔍 ${method} Response status:`, response.status, response.statusText)
-          
-          const responseText = await response.text()
-          console.log(`🔍 ${method} Raw response:`, responseText)
-          
-          if (response.ok) {
-            let data
-            try {
-              data = JSON.parse(responseText)
-            } catch (e) {
-              console.error('🔍 Failed to parse response as JSON:', e)
-              throw new Error(`Invalid response format: ${responseText}`)
-            }
-            
-            if (data.success) {
-              console.log(`🔍 ✅ ${method} authentication successful!`, data)
-              return data
-            } else {
-              console.log(`🔍 ❌ ${method} authentication failed:`, data.message)
-              // Continue to next method
-            }
-          } else {
-            console.log(`🔍 ❌ ${method} HTTP error:`, response.status, responseText)
-            // Continue to next method
-          }
-        } catch (fetchError) {
-          console.log(`🔍 ❌ ${method} fetch error:`, fetchError.message)
-          // Continue to next method
-        }
+      const response = await fetch(`${API_BASE_URL}/orders`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(inventoryOrderData)
+      })
+      
+      console.log('🔍 Response status:', response.status, response.statusText)
+      
+      const responseText = await response.text()
+      console.log('🔍 Raw response:', responseText)
+      
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (e) {
+        console.error('🔍 Failed to parse response as JSON:', e)
+        throw new Error(`Invalid response format: ${responseText}`)
       }
       
-      // If all methods failed
-      throw new Error('All authentication methods failed. Please check your access token.')
+      if (!data.success) {
+        console.error('🔍 API returned error:', data)
+        throw new Error(data.message || 'Failed to create order')
+      }
+      
+      console.log('🔍 ✅ Order created successfully!', data)
+      return data
       
     } catch (error) {
       console.error('🔍 API Error in createOrder:', error)
@@ -810,17 +755,9 @@ export const api = {
 
       const url = `${API_BASE_URL}/orders${queryParams.toString() ? '?' + queryParams.toString() : ''}`
       
-      // Try with Authorization Bearer header first
-      let response = await fetch(url, {
-        headers: getAuthHeaders('bearer')
+      const response = await fetch(url, {
+        headers: getAuthHeaders('apikey') // Use X-API-Key as primary
       })
-      
-      // If Authorization Bearer fails, try with X-API-Key header
-      if (!response.ok && response.status === 401) {
-        response = await fetch(url, {
-          headers: getAuthHeaders('apikey')
-        })
-      }
       
       const data = await response.json()
       
@@ -837,17 +774,9 @@ export const api = {
 
   async getOrder(orderId: number): Promise<ApiResponse<Order>> {
     try {
-      // Try with Authorization Bearer header first
-      let response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
-        headers: getAuthHeaders('bearer')
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+        headers: getAuthHeaders('apikey') // Use X-API-Key as primary
       })
-      
-      // If Authorization Bearer fails, try with X-API-Key header
-      if (!response.ok && response.status === 401) {
-        response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
-          headers: getAuthHeaders('apikey')
-        })
-      }
       
       const data = await response.json()
       
@@ -864,19 +793,10 @@ export const api = {
 
   async cancelOrder(orderId: number): Promise<ApiResponse<void>> {
     try {
-      // Try with Authorization Bearer header first
-      let response = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
         method: 'PUT',
-        headers: getAuthHeaders('bearer')
+        headers: getAuthHeaders('apikey') // Use X-API-Key as primary
       })
-      
-      // If Authorization Bearer fails, try with X-API-Key header
-      if (!response.ok && response.status === 401) {
-        response = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
-          method: 'PUT',
-          headers: getAuthHeaders('apikey')
-        })
-      }
       
       const data = await response.json()
       
@@ -893,7 +813,9 @@ export const api = {
 
   async trackOrder(orderNumber: string): Promise<ApiResponse<{ status: string; tracking_details: any[] }>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/orders/track/${orderNumber}`)
+      const response = await fetch(`${API_BASE_URL}/orders/track/${orderNumber}`, {
+        headers: getAuthHeaders('apikey') // Use X-API-Key header
+      })
       
       const data = await response.json()
       
