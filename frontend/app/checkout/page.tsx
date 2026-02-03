@@ -304,7 +304,7 @@ export default function CheckoutPage() {
               </h2>
               
               <div className="space-y-4">
-                <div className="flex gap-4">
+                <div className="flex flex-wrap gap-4">
                   <label className="flex items-center">
                     <input
                       type="radio"
@@ -324,6 +324,16 @@ export default function CheckoutPage() {
                       className="mr-2"
                     />
                     <span className="text-gray-300">PayPal</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="cod"
+                      checked={paymentMethod === 'cod'}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="mr-2"
+                    />
+                    <span className="text-gray-300">Cash on Delivery (COD)</span>
                   </label>
                 </div>
                 
@@ -352,6 +362,43 @@ export default function CheckoutPage() {
                         placeholder="123"
                         className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                    </div>
+                  </div>
+                )}
+                
+                {paymentMethod === 'cod' && (
+                  <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 mt-4">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-blue-500 rounded-full p-1 mt-0.5">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-blue-300 font-medium mb-2">Cash on Delivery</h4>
+                        <ul className="text-gray-300 text-sm space-y-1">
+                          <li>• Pay when your order is delivered to your doorstep</li>
+                          <li>• No advance payment required</li>
+                          <li>• Cash payment to delivery person</li>
+                          <li>• Please keep exact change ready</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {paymentMethod === 'paypal' && (
+                  <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mt-4">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-yellow-500 rounded-full p-1">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-yellow-300 font-medium">PayPal Payment</h4>
+                        <p className="text-gray-300 text-sm">You will be redirected to PayPal to complete your payment securely.</p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -416,7 +463,11 @@ export default function CheckoutPage() {
                 disabled={processing}
                 className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed mt-6"
               >
-                {processing ? 'Processing...' : `Place Order - $${totals.total.toFixed(2)}`}
+                {processing ? 'Processing...' : 
+                  paymentMethod === 'cod' ? `Place Order (COD) - $${totals.total.toFixed(2)}` :
+                  paymentMethod === 'paypal' ? `Pay with PayPal - $${totals.total.toFixed(2)}` :
+                  `Place Order - $${totals.total.toFixed(2)}`
+                }
               </button>
             </div>
           </div>
