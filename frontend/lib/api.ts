@@ -742,8 +742,12 @@ export const api = {
           postalCode: orderData.billing_address.postal_code,
           country: orderData.billing_address.country
         } : undefined,
+        // Add payment method at multiple levels to ensure server finds it
+        paymentMethod: orderData.payment_method, // Top level
+        payment_method: orderData.payment_method, // Snake case
         payment: {
           method: orderData.payment_method,
+          paymentMethod: orderData.payment_method, // Camel case inside payment
           transactionId: `txn_${Date.now()}`, // Generate transaction ID
           amount: 0, // Will be calculated by backend
           currency: 'USD',
@@ -760,7 +764,8 @@ export const api = {
 
       // Debug: Log what we're sending
       console.log('🔍 Creating order with token:', ACCESS_TOKEN.substring(0, 20) + '...')
-      console.log('🔍 Order data:', inventoryOrderData)
+      console.log('🔍 Payment method from orderData:', orderData.payment_method)
+      console.log('🔍 Complete order data being sent:', inventoryOrderData)
 
       // Use X-API-Key header as primary method (server confirmed this is required)
       const headers = getAuthHeaders('apikey')

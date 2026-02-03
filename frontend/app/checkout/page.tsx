@@ -90,6 +90,9 @@ export default function CheckoutPage() {
     setProcessing(true)
     
     try {
+      // Debug: Log payment method being sent
+      console.log('🔍 Payment method selected:', paymentMethod)
+      
       // Prepare order data for the real inventory API
       const orderData = {
         items: [{
@@ -102,6 +105,8 @@ export default function CheckoutPage() {
         payment_method: paymentMethod,
         coupon_code: undefined
       }
+      
+      console.log('🔍 Complete order data:', orderData)
       
       // Call the real inventory API
       const response = await api.createOrder(orderData)
