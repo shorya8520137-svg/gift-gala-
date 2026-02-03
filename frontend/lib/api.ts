@@ -727,32 +727,57 @@ export const api = {
         }
       }
 
+      // Debug: Log what we're sending
+      console.log('🔍 Creating order with token:', ACCESS_TOKEN.substring(0, 20) + '...')
+      console.log('🔍 Order data:', inventoryOrderData)
+
       // Try with Authorization Bearer header first
+      const headers1 = getAuthHeaders(false)
+      console.log('🔍 Trying Authorization Bearer headers:', headers1)
+      
       let response = await fetch(`${API_BASE_URL}/orders`, {
         method: 'POST',
-        headers: getAuthHeaders(false), // Option 1: Authorization Bearer
+        headers: headers1,
         body: JSON.stringify(inventoryOrderData)
       })
       
+      console.log('🔍 Response status:', response.status, response.statusText)
+      
       // If Authorization Bearer fails, try with X-API-Key header
       if (!response.ok && response.status === 401) {
-        console.log('Authorization Bearer failed, trying X-API-Key...')
+        console.log('🔍 Authorization Bearer failed, trying X-API-Key...')
+        const headers2 = getAuthHeaders(true)
+        console.log('🔍 Trying X-API-Key headers:', headers2)
+        
         response = await fetch(`${API_BASE_URL}/orders`, {
           method: 'POST',
-          headers: getAuthHeaders(true), // Option 2: X-API-Key
+          headers: headers2,
           body: JSON.stringify(inventoryOrderData)
         })
+        
+        console.log('🔍 X-API-Key Response status:', response.status, response.statusText)
       }
       
-      const data = await response.json()
+      const responseText = await response.text()
+      console.log('🔍 Raw response:', responseText)
+      
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (e) {
+        console.error('🔍 Failed to parse response as JSON:', e)
+        throw new Error(`Invalid response format: ${responseText}`)
+      }
       
       if (!data.success) {
+        console.error('🔍 API returned error:', data)
         throw new Error(data.message || 'Failed to create order')
       }
       
+      console.log('🔍 Order created successfully:', data)
       return data
     } catch (error) {
-      console.error('API Error:', error)
+      console.error('🔍 API Error in createOrder:', error)
       throw error
     }
   },
